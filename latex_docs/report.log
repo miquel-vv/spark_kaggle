@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.14159265-2.6-0.999991 (TeX Live 2019/Debian) (preloaded format=xelatex 2021.11.21)  9 DEC 2022 16:14
+This is XeTeX, Version 3.14159265-2.6-0.999991 (TeX Live 2019/Debian) (preloaded format=xelatex 2021.11.21)  9 DEC 2022 16:26
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -270,25 +270,33 @@ Overfull \hbox (75.0726pt too wide) in paragraph at lines 37--38
  [][] 
  []
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 40.
 [1
 
-] [2]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 40.
+]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 42.
+ [2]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 42.
  (./report.aux)
-Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 40.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 40.
-Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 67D87EDCED06B1A3937D8A18FD1302FF;415.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 40.
+Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 42.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 42.
+
+
+Package rerunfilecheck Warning: File `report.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `report.out':
+(rerunfilecheck)             Before: 67D87EDCED06B1A3937D8A18FD1302FF;415
+(rerunfilecheck)             After:  5076534F4B516D67FE8451AF81F536C1;546.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 42.
  ) 
 Here is how much of TeX's memory you used:
  8344 strings out of 481804
  121593 string characters out of 5937875
- 367270 words of memory out of 5000000
+ 367299 words of memory out of 5000000
  25248 multiletter control sequences out of 15000+600000
  535498 words of font info for 42 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 34i,8n,45p,652b,312s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 34i,8n,45p,652b,311s stack positions out of 5000i,500n,10000p,200000b,80000s
 
 Output written on report.pdf (2 pages).
