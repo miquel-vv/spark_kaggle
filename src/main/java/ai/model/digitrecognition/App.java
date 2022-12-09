@@ -3,75 +3,94 @@ package ai.model.digitrecognition;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.spark.ml.Pipeline;
-import org.apache.spark.ml.PipelineStage;
-import org.apache.spark.ml.classification.RandomForestClassifier;
+import org.apache.spark.ml.Model;
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
-import org.apache.spark.ml.feature.VectorAssembler;
-import org.apache.spark.ml.param.ParamMap;
-import org.apache.spark.ml.tuning.CrossValidator;
 import org.apache.spark.ml.tuning.CrossValidatorModel;
-import org.apache.spark.ml.tuning.ParamGridBuilder;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.functions;
 
 
 public class App {
+
+    private static SparkSession SPARK;
+
     public static void main( String[] args ) {
-        SparkSession spark = SparkSession.builder()
+        SPARK = SparkSession.builder()
             .appName("testSpark").master("local[*]")
             .getOrCreate();
         
-        Dataset<Row> df = getData(spark);
-        
-        List<String> columns = List.of(df.columns());
-        List<String> pixelNames = columns.subList(1, columns.size());
-
-        VectorAssembler assembler = new VectorAssembler()
-            .setInputCols(pixelNames.toArray(new String[pixelNames.size()]))
-            .setOutputCol("features");
-        
-        //Dataset<Row> transformed = assembler.transform(df);
-
+        Dataset<Row> df = getData();
         Dataset<Row>[] splits = df.randomSplit(new double[] {0.9,0.1}, 1);
         Dataset<Row> training = splits[0];
         Dataset<Row> test = splits[1];
 
-        RandomForestClassifier forest = new RandomForestClassifier();
-        //RandomForestClassificationModel model = forest.fit(training);
-        
-        Pipeline pipeline = new Pipeline()
-            .setStages(new PipelineStage[] {assembler, forest});
-
-        ParamMap[] paramGrid = new ParamGridBuilder()
-            .addGrid(forest.numTrees(), new int[] {25, 50, 100})
-            .addGrid(forest.maxDepth(), new int[] {5, 10})
+        CrossValidatorModel model = new ModelBuilder()
+            .setAlgoType(AlgoType.RANDOM_FOREST)
+            .addTrainData(training)
             .build();
 
-        CrossValidator cv = new CrossValidator()
-            .setEstimator(pipeline)
-            .setEvaluator(new MulticlassClassificationEvaluator())
-            .setEstimatorParamMaps(paramGrid)
-            .setNumFolds(3)
-            .setParallelism(3);
+        System.out.println("====> Params used: ");
+        System.out.println(model.avgMetrics());
 
-        CrossValidatorModel model = cv.fit(training);
+        double accuracy = determineAccuracy(model, test); 
+        System.out.printf("====> test set accuracy: %s%n", accuracy);
+        createPredictions(model, AlgoType.RANDOM_FOREST.name()); 
 
+        SPARK.stop();
+    }
+
+    private static double determineAccuracy(Model model, Dataset<Row> test) {
         Dataset<Row> results = model.transform(test);
         Dataset<Row> predictionAndLabels = results.select("prediction", "label");
         MulticlassClassificationEvaluator eval = new MulticlassClassificationEvaluator()
             .setMetricName("accuracy");
         
-        System.out.printf("test set accuracy: %s%n", eval.evaluate(predictionAndLabels));
-
-        spark.stop();
+        return eval.evaluate(predictionAndLabels);
     }
 
-    private static Dataset<Row> getData(SparkSession spark){
+    private static void createPredictions(Model model, String folderName) {
+        Dataset<Row> test = getTestData();
+        Dataset<Row> predictions = model.transform(test);
+        Dataset<Row> submission = predictions
+            .select("ImageId","prediction")
+            .withColumn("Label", functions.expr("CAST(prediction as int)"))
+            .drop("prediction");
+
+        submission
+            .coalesce(1)
+            .write()
+            .option("header", true)
+            .mode("overwrite")
+            .csv(String.format("submissions_%s",folderName)); 
+    }
+
+
+    private static Dataset<Row> getTestData(){
+        List<StructField> fields = new ArrayList<>();
+        for(int i=0;i<784;i++){
+            fields.add(DataTypes.createStructField(String.format("pixel%s", i), DataTypes.IntegerType, false));
+        }
+        StructField labelType = DataTypes.createStructField("ImageId", DataTypes.IntegerType, false);
+
+        List<StructField> trainSetFields = new ArrayList<>(fields);
+        trainSetFields.add(0, labelType);
+
+        StructType trainSetTypes = DataTypes.createStructType(trainSetFields);
+            
+        Dataset<Row> df = SPARK.read()
+            .option("header", true)
+            .schema(trainSetTypes)
+            .csv("test_with_id.csv");
+
+        return df;
+    }
+
+    private static Dataset<Row> getData(){
         StructField labelType = DataTypes.createStructField("label", DataTypes.DoubleType, false);
         List<StructField> fields = new ArrayList<>();
 
@@ -84,7 +103,7 @@ public class App {
 
         StructType trainSetTypes = DataTypes.createStructType(trainSetFields);
             
-        Dataset<Row> df = spark.read()
+        Dataset<Row> df = SPARK.read()
             .option("header", true)
             .schema(trainSetTypes)
             .csv("train.csv");
