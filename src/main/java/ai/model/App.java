@@ -15,7 +15,8 @@ public class App {
         
         housePriceRegression();
 
-        SPARK.stop();
+        SPARK.close();
+        SPARK.stop();   
     }
 
     private static void housePriceRegression() {

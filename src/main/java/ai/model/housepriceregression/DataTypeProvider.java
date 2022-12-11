@@ -91,7 +91,7 @@ public class DataTypeProvider {
         fields.add(DataTypes.createStructField("SaleType", DataTypes.StringType, true));
         fields.add(DataTypes.createStructField("SaleCondition", DataTypes.StringType, true));
         if(includeSalesPrice)
-            fields.add(DataTypes.createStructField("SalePrice", DataTypes.FloatType, true));
+            fields.add(DataTypes.createStructField("SalePrice", DataTypes.DoubleType, true));
 
         return fields;
     }
