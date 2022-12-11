@@ -31,7 +31,7 @@ public class ModelBuilder {
             model
                 .write()
                 .overwrite()
-                .save(String.format("model_%s", AlgoType.RANDOM_FOREST.name()));
+                .save(String.format("data/digitrecognition/model_%s", AlgoType.RANDOM_FOREST.name()));
         } catch(IOException e){
             System.out.println("====> unable to save model.");
         }

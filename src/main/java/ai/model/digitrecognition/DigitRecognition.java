@@ -12,18 +12,19 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+
 import org.apache.spark.sql.functions;
 
 
-public class App {
+public class DigitRecognition {
 
-    private static SparkSession SPARK;
+    private final SparkSession spark;
 
-    public static void main( String[] args ) {
-        SPARK = SparkSession.builder()
-            .appName("testSpark").master("local[*]")
-            .getOrCreate();
-        
+    public DigitRecognition(SparkSession spark) {
+        this.spark = spark;
+    }
+
+    public void run() {
         Dataset<Row> df = getData();
         Dataset<Row>[] splits = df.randomSplit(new double[] {0.9,0.1}, 1);
         Dataset<Row> training = splits[0];
@@ -40,11 +41,9 @@ public class App {
         double accuracy = determineAccuracy(model, test); 
         System.out.printf("====> test set accuracy: %s%n", accuracy);
         createPredictions(model, AlgoType.RANDOM_FOREST.name()); 
-
-        SPARK.stop();
     }
 
-    private static double determineAccuracy(Model model, Dataset<Row> test) {
+    private double determineAccuracy(Model model, Dataset<Row> test) {
         Dataset<Row> results = model.transform(test);
         Dataset<Row> predictionAndLabels = results.select("prediction", "label");
         MulticlassClassificationEvaluator eval = new MulticlassClassificationEvaluator()
@@ -53,7 +52,7 @@ public class App {
         return eval.evaluate(predictionAndLabels);
     }
 
-    private static void createPredictions(Model model, String folderName) {
+    private void createPredictions(Model model, String folderName) {
         Dataset<Row> test = getTestData();
         Dataset<Row> predictions = model.transform(test);
         Dataset<Row> submission = predictions
@@ -66,11 +65,11 @@ public class App {
             .write()
             .option("header", true)
             .mode("overwrite")
-            .csv(String.format("submissions_%s",folderName)); 
+            .csv(String.format("data/digitrecognition/submissions_%s",folderName)); 
     }
 
 
-    private static Dataset<Row> getTestData(){
+    private Dataset<Row> getTestData(){
         List<StructField> fields = new ArrayList<>();
         for(int i=0;i<784;i++){
             fields.add(DataTypes.createStructField(String.format("pixel%s", i), DataTypes.IntegerType, false));
@@ -82,15 +81,15 @@ public class App {
 
         StructType trainSetTypes = DataTypes.createStructType(trainSetFields);
             
-        Dataset<Row> df = SPARK.read()
+        Dataset<Row> df = spark.read()
             .option("header", true)
             .schema(trainSetTypes)
-            .csv("test_with_id.csv");
+            .csv("data/digitrecognition/test_with_id.csv");
 
         return df;
     }
 
-    private static Dataset<Row> getData(){
+    private Dataset<Row> getData(){
         StructField labelType = DataTypes.createStructField("label", DataTypes.DoubleType, false);
         List<StructField> fields = new ArrayList<>();
 
@@ -103,10 +102,10 @@ public class App {
 
         StructType trainSetTypes = DataTypes.createStructType(trainSetFields);
             
-        Dataset<Row> df = SPARK.read()
+        Dataset<Row> df = spark.read()
             .option("header", true)
             .schema(trainSetTypes)
-            .csv("train.csv");
+            .csv("data/digitrecognition/train.csv");
 
         return df;
     }
